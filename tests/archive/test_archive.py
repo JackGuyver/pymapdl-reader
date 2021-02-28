@@ -23,6 +23,14 @@ testfiles_path = os.path.join(test_path, 'test_data')
 DAT_FILE = os.path.join(testfiles_path, 'Panel_Transient.dat')
 
 
+SAMPLE_CMBLOCK = """CMBLOCK,USER_NODES,NODE,      11 ! testing
+(8i10)
+        64        66      -105       188      -510      5700     -5968     16350
+    -17081     17165    -18744
+"""
+
+
+
 def proto_cmblock(array):
     """prototype cmblock code"""
     items = np.zeros_like(array)
@@ -317,6 +325,24 @@ def test_write_component(tmpdir):
     pymapdl_reader.write_cmblock(filename, items, comp_name, 'node')
     archive = pymapdl_reader.Archive(filename)
     assert np.allclose(archive.node_components[comp_name], items)
+
+
+def test_read_write_cmblock(tmpdir):
+    path = tmpdir.mkdir("tmpdir")
+    filename = str(path.join('tmp.cdb'))
+    with open(filename, 'w') as f:
+        f.write(SAMPLE_CMBLOCK)
+
+    archive = pymapdl_reader.Archive(filename)
+    archive.node_components['USER_NODES']
+
+    filename_out = str(path.join('tmp_out.cdb'))
+    pymapdl_reader.write_cmblock(filename_out, archive.node_components['USER_NODES'],
+                                 'USER_NODES', 'node')
+
+    archive_new = pymapdl_reader.Archive(filename_out)
+    assert np.allclose(archive.node_components['USER_NODES'],
+                       archive_new.node_components['USER_NODES'])
 
 
 def test_read_parm():
